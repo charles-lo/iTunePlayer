@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">iTunes Player</string>
+    <string name="artwork">artwork</string>
+    <string name="search">Search</string>
+    <string name="blur_background">blur_background</string>
+    <string name="playback_hint">click to show media controller</string>
+    <string name="search_to_get_started">Search to get started..</string>
+</resources>
