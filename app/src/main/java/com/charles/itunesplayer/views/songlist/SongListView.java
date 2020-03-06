@@ -4,9 +4,11 @@ import android.app.SearchManager;
 import android.content.Context;
 import android.os.Bundle;
 
+import com.charles.itunesplayer.api.iTuneViewModel;
 import com.google.android.material.snackbar.Snackbar;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -25,7 +27,7 @@ import com.charles.itunesplayer.api.model.Track;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SongListView extends AppCompatActivity implements SongListContract.View {
+public class SongListView extends AppCompatActivity {
 
     Context context;
     LinearLayout main;
@@ -35,11 +37,7 @@ public class SongListView extends AppCompatActivity implements SongListContract.
     private List<Track> dataTracks = new ArrayList<>();
     private SongAdapter adapter;
 
-    SongListPresenter presenter;
-
-    public SongListView() {
-        presenter = new SongListPresenter(this);
-    }
+    iTuneViewModel viewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +45,8 @@ public class SongListView extends AppCompatActivity implements SongListContract.
         setContentView(R.layout.song_list);
 
         context = SongListView.this;
+
+        viewModel = new ViewModelProvider(this).get(iTuneViewModel.class);
 
         main = findViewById(R.id.song_list_main);
         txtNoSongs = findViewById(R.id.txtNoSongs);
@@ -92,15 +92,22 @@ public class SongListView extends AppCompatActivity implements SongListContract.
         adapter.notifyDataSetChanged();
 
         setLoadingIndicator(true);
-        listTracks.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                presenter.getTracks(strTerm);
+        viewModel.fetchTracks(strTerm);
+
+        viewModel.tracks.observe(this, result -> {
+            if (result != null) {
+                if (result.size() > 0) {
+                    displayTracks(result);
+                } else {
+                    displayMessage("No songs found, Try again.");
+                }
+            } else {
+                displayMessage("network error, check again.");
             }
-        }, 2000);
+        });
+
     }
 
-    @Override
     public void displayTracks(List<Track> dataTracks) {
         setLoadingIndicator(false);
         this.dataTracks.clear();
@@ -108,13 +115,11 @@ public class SongListView extends AppCompatActivity implements SongListContract.
         adapter.notifyDataSetChanged();
     }
 
-    @Override
     public void displayMessage(String message) {
         setLoadingIndicator(false);
         Snackbar.make(main, message, Snackbar.LENGTH_LONG).show();
     }
 
-    @Override
     public void setLoadingIndicator(boolean isLoading) {
         if (isLoading) {
             listTracks.showShimmerAdapter();
